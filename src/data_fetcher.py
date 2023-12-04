@@ -3,8 +3,6 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.by import By
 import time
 import numpy as np
-# import requests
-# from PIL import Image
 import pyautogui
 
 class DataFetcher:
@@ -37,31 +35,18 @@ class DataFetcher:
 
         numbersImage = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_RadCaptcha1_CaptchaImageUP"]')
         imageURL = numbersImage.get_attribute("src")
-        # displayedNumber = input('What is the displayed number?')
-        for i in range(5):
-            # self.saveImages(imageURL, displayedNumber)
-            self.saveImages(imageURL)
-            time.sleep(5)
+        displayedNumber = input('What is the displayed number?')
+        for i in range(20):
+            self.saveImages(imageURL, i, displayedNumber)
+            time.sleep(3)
         
         self.driver.close()
 
-    def saveImages(self, imageURL):
-        for i in range(5):
-            self.driver.get(imageURL)
-            myScreenshot = pyautogui.screenshot()
-            myScreenshot.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{i}.png')
-            time.sleep(3)
-
-
-
-            # response = requests.get(imageURL)
-            # time.sleep(10)
-            # with open(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{displayedNumber}_{i}.png', 'wb') as f:
-            #     f.write(response.content)
-            # time.sleep(3)
-            # img = Image.open(requests.get(imageURL, stream = True).raw).convert('RGB')
-            # time.sleep(2)
-            # img.save(f"{displayedNumber}_{i}.jpeg")
+    def saveImages(self, imageURL, index, displayedNumber):
+        self.driver.get(imageURL)
+        myScreenshot = pyautogui.screenshot(region=(806, 614, 180, 48))
+        myScreenshot.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{displayedNumber}_{index}.png')
+        
 
 
 
