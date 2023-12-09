@@ -68,10 +68,6 @@ class DataFetcher:
         transactionType = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_DDLMahutIska"]')
         submitButton = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_btnHipus"]')
         return cityInput, propertyType, transactionType, submitButton
-                
-    def refreshNumber(self):
-        refreshLink = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_RadCaptcha1_CaptchaLinkButton"]')
-        refreshLink.click()
 
     def saveImagesOfSpecificNumber(self, imageURL, number):
         for i in range(25):
