@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import csv
 
-NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION = 1
+NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION = 25
 
 class DataFetcher:
     
@@ -74,7 +74,7 @@ class DataFetcher:
         refreshLink.click()
 
     def saveImagesOfSpecificNumber(self, imageURL, number):
-        for i in range(2):
+        for i in range(25):
             self.driver.get(imageURL)
             myScreenshot = pyautogui.screenshot(region=(806, 614, 180, 48))
             imagePath = f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{number}.png'
