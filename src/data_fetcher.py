@@ -7,45 +7,27 @@ import pyautogui
 from PIL import Image
 import uuid 
 import os
+import pandas as pd
+import csv
 
 
 class DataFetcher:
     
     def __init__(self):
-        options = webdriver.ChromeOptions()
-        options.add_argument("--start-maximized")
-        self.driver = webdriver.Chrome(options)        
+        self.csvFileName = 'digits_images_counter.csv'
+        self.options = webdriver.ChromeOptions()
+        self.options.add_argument("--start-maximized")
         self.numbersAndLocationExistanceArray = np.zeros((10, 4))
-        self.digitsImagesCounterDictionary = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
+        self.digitsImagesCounterDataFrame = self.getUpdatedDigitsImagesCounterDataFrame()
         self.tabsAndNumbersDictionary = {}
-        self.originalTab = self.driver.current_window_handle
-
 
     def createDatabase(self):
-        self.fillDataAndSubmit()
         for i in range(3):
+            self.fillDataAndSubmit()
             number, imageURL = self.getURLAndStringOfNumberDisplayed()
             self.createNewTab(imageURL)
-            # currentTab = self.driver.current_window_handle
-            # self.tabsAndNumbersDictionary[currentTab] = number
             self.saveImagesOfSpecificNumber(imageURL, number)
-            self.switchToMainTab()
-            self.refreshNumber()
-        # self.createDatabaseFromOpenTabs()
-        self.driver.close()
-
-    # def createDatabaseFromOpenTabs(self):
-    #     for window_handle in self.driver.window_handles:
-    #         if window_handle != self.originalTab:
-    #             self.driver.switch_to.window(window_handle)
-    #             currentURL = self.driver.current_url
-    #             displayedNumber = self.tabsAndNumbersDictionary[window_handle]
-    #             self.saveImagesOfSpecificNumber(currentURL, displayedNumber)
-
-    def switchToMainTab(self):
-        for window_handle in self.driver.window_handles:
-            if window_handle == self.originalTab:
-                self.driver.switch_to.window(window_handle)
+            self.driver.close()
     
     def createNewTab(self, imageURL):
         self.driver.switch_to.new_window('tab')
@@ -58,6 +40,8 @@ class DataFetcher:
         return number, imageURL
     
     def fillDataAndSubmit(self):
+        self.driver = webdriver.Chrome(self.options)        
+        self.originalTab = self.driver.current_window_handle
         self.driver.get("https://nadlan.taxes.gov.il/svinfonadlan2010/startpageNadlanNewDesign.aspx?ProcessKey=cb2fc2f5-08db-4099-9d1e-8eb9f6bcda42")
         cityInput, propertyType, transactionType, submitButton = self.getElementsFromNadlanWebsite()
         cityInput.send_keys("חיפה")
@@ -83,7 +67,7 @@ class DataFetcher:
         refreshLink.click()
 
     def saveImagesOfSpecificNumber(self, imageURL, number):
-        for i in range(10):
+        for i in range(3):
             self.driver.get(imageURL)
             myScreenshot = pyautogui.screenshot(region=(806, 614, 180, 48))
             imagePath = f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{number}.png'
@@ -91,6 +75,10 @@ class DataFetcher:
             self.splitImageToFourDigits(imagePath, number)
             os.remove(imagePath)
             time.sleep(2)
+        self.digitsImagesCounterDataFrame.to_csv(self.csvFileName)
+            
+    def saveNewCsvFromDataFrame(self):
+        return
 
 
     def splitImageToFourDigits(self, imagePath, number):
@@ -104,26 +92,50 @@ class DataFetcher:
             thirdDigit = int(number[2])
             fourthDigit = int(number[3])
 
-            if(self.digitsImagesCounterDictionary[firstDigit] <= 10000):
+            if(self.digitsImagesCounterDataFrame[firstDigit - 1]['NumberOfInstancesFirstDigit'] <= 10000):
                 firstCroppedImage = image.crop((0, 0, firstDigitRight, image.height))
                 firstCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{firstDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDictionary[firstDigit] += 1
+                self.digitsImagesCounterDataFrame.at[firstDigit - 1]['NumberOfInstancesFirstDigit'] += 1
 
-            if(self.digitsImagesCounterDictionary[secondDigit] <= 10000):
+            if(self.digitsImagesCounterDataFrame[secondDigit - 1]['NumberOfInstancesFirstDigit'] <= 10000):
                 secondCroppedImage = image.crop((firstDigitRight, 0, secondDigitRight, image.height))
-                
                 secondCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{secondDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDictionary[secondDigit] += 1
+                self.digitsImagesCounterDataFrame[secondDigit] += 1
 
-            if(self.digitsImagesCounterDictionary[thirdDigit] <= 10000):
+            if(self.digitsImagesCounterDataFrame[thirdDigit - 1]['NumberOfInstancesFirstDigit'] <= 10000):
                 thirdCroppedImage = image.crop((secondDigitRight, 0, thirdDigitRight, image.height))
                 thirdCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{thirdDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDictionary[thirdDigit] += 1
+                self.digitsImagesCounterDataFrame[thirdDigit] += 1
 
-            if(self.digitsImagesCounterDictionary[fourthDigit] <= 10000):
+            if(self.digitsImagesCounterDataFrame[fourthDigit - 1]['NumberOfInstancesFirstDigit'] <= 10000):
                 fourthCroppedImage = image.crop((thirdDigitRight, 0, image.width, image.height))
                 fourthCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{fourthDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDictionary[fourthDigit] += 1
+                self.digitsImagesCounterDataFrame[fourthDigit] += 1
+                
+    def getUpdatedDigitsImagesCounterDataFrame(self):
+        try:
+            with open(self.csvFileName) as file:
+                content = file.readlines()
+            header = content[:1]
+            data = content[1:]
+        except:
+            header = ['digit', 'NumberOfInstancesFirstDigit', 'NumberOfInstancesSecondDigit', 'NumberOfInstancesThirdDigit', 'NumberOfInstancesFourthDigit']
+            data = [[1, 0, 0, 0, 0], 
+                    [2, 0, 0, 0, 0],
+                    [3, 0, 0, 0, 0], 
+                    [4, 0, 0, 0, 0], 
+                    [5, 0, 0, 0, 0], 
+                    [6, 0, 0, 0, 0], 
+                    [7, 0, 0, 0, 0], 
+                    [8, 0, 0, 0, 0], 
+                    [9, 0, 0, 0, 0]]
+            with open(self.csvFileName, 'w', newline="") as file:
+                csvWriter = csv.writer(file)
+                csvWriter.writerow(header)
+                csvWriter.writerows(data)
+        finally: 
+            digitsImagesCounterdataFrame = pd.read_csv(self.csvFileName)
+            return digitsImagesCounterdataFrame
             
 
 
