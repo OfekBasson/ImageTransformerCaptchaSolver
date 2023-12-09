@@ -10,6 +10,7 @@ import os
 import pandas as pd
 import csv
 
+NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION = 1
 
 class DataFetcher:
     
@@ -22,7 +23,7 @@ class DataFetcher:
         self.tabsAndNumbersDictionary = {}
 
     def createDatabase(self):
-        for i in range(3):
+        while(not self.finishedFetchingData()):
             self.fillDataAndSubmit()
             number, imageURL = self.getURLAndStringOfNumberDisplayed()
             self.createNewTab(imageURL)
@@ -32,6 +33,14 @@ class DataFetcher:
     def createNewTab(self, imageURL):
         self.driver.switch_to.new_window('tab')
         self.driver.get(imageURL)
+        
+    def finishedFetchingData(self):
+        dataFrameHeaderValues = ['NumberOfInstancesFirstDigit', 'NumberOfInstancesSecondDigit', 'NumberOfInstancesThirdDigit', 'NumberOfInstancesFourthDigit']
+        for i in range(9):
+            for columnName in dataFrameHeaderValues:
+                if (self.digitsImagesCounterDataFrame.at[i, columnName] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
+                    return False
+        return True
     
     def getURLAndStringOfNumberDisplayed(self):
         numbersImage = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_RadCaptcha1_CaptchaImageUP"]')
@@ -53,21 +62,19 @@ class DataFetcher:
         submitButton.click()
         time.sleep(5)
 
-
     def getElementsFromNadlanWebsite(self):
         cityInput = self.driver.find_element(By.XPATH, '//*[@id="txtYeshuv"]')
         propertyType =  self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_DDLTypeNehes"]')
         transactionType = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_DDLMahutIska"]')
         submitButton = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_btnHipus"]')
         return cityInput, propertyType, transactionType, submitButton
-            
-        
+                
     def refreshNumber(self):
         refreshLink = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_RadCaptcha1_CaptchaLinkButton"]')
         refreshLink.click()
 
     def saveImagesOfSpecificNumber(self, imageURL, number):
-        for i in range(3):
+        for i in range(2):
             self.driver.get(imageURL)
             myScreenshot = pyautogui.screenshot(region=(806, 614, 180, 48))
             imagePath = f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{number}.png'
@@ -76,10 +83,6 @@ class DataFetcher:
             os.remove(imagePath)
             time.sleep(2)
         self.digitsImagesCounterDataFrame.to_csv(self.csvFileName)
-            
-    def saveNewCsvFromDataFrame(self):
-        return
-
 
     def splitImageToFourDigits(self, imagePath, number):
         with Image.open(imagePath) as image:
@@ -92,25 +95,25 @@ class DataFetcher:
             thirdDigit = int(number[2])
             fourthDigit = int(number[3])
 
-            if(self.digitsImagesCounterDataFrame[firstDigit - 1]['NumberOfInstancesFirstDigit'] <= 10000):
+            if(self.digitsImagesCounterDataFrame.at[firstDigit, 'NumberOfInstancesFirstDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
                 firstCroppedImage = image.crop((0, 0, firstDigitRight, image.height))
                 firstCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{firstDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDataFrame.at[firstDigit - 1]['NumberOfInstancesFirstDigit'] += 1
+                self.digitsImagesCounterDataFrame.at[firstDigit, 'NumberOfInstancesFirstDigit'] += 1
 
-            if(self.digitsImagesCounterDataFrame[secondDigit - 1]['NumberOfInstancesFirstDigit'] <= 10000):
+            if(self.digitsImagesCounterDataFrame.at[secondDigit, 'NumberOfInstancesSecondDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
                 secondCroppedImage = image.crop((firstDigitRight, 0, secondDigitRight, image.height))
                 secondCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{secondDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDataFrame[secondDigit] += 1
+                self.digitsImagesCounterDataFrame.at[secondDigit, 'NumberOfInstancesSecondDigit'] += 1
 
-            if(self.digitsImagesCounterDataFrame[thirdDigit - 1]['NumberOfInstancesFirstDigit'] <= 10000):
+            if(self.digitsImagesCounterDataFrame.at[thirdDigit, 'NumberOfInstancesThirdDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
                 thirdCroppedImage = image.crop((secondDigitRight, 0, thirdDigitRight, image.height))
                 thirdCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{thirdDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDataFrame[thirdDigit] += 1
+                self.digitsImagesCounterDataFrame.at[thirdDigit, 'NumberOfInstancesThirdDigit'] += 1
 
-            if(self.digitsImagesCounterDataFrame[fourthDigit - 1]['NumberOfInstancesFirstDigit'] <= 10000):
+            if(self.digitsImagesCounterDataFrame.at[fourthDigit, 'NumberOfInstancesFourthDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
                 fourthCroppedImage = image.crop((thirdDigitRight, 0, image.width, image.height))
                 fourthCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{fourthDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDataFrame[fourthDigit] += 1
+                self.digitsImagesCounterDataFrame.at[fourthDigit, 'NumberOfInstancesFourthDigit'] += 1
                 
     def getUpdatedDigitsImagesCounterDataFrame(self):
         try:
@@ -120,7 +123,8 @@ class DataFetcher:
             data = content[1:]
         except:
             header = ['digit', 'NumberOfInstancesFirstDigit', 'NumberOfInstancesSecondDigit', 'NumberOfInstancesThirdDigit', 'NumberOfInstancesFourthDigit']
-            data = [[1, 0, 0, 0, 0], 
+            data = [[0, 0, 0, 0, 0], 
+                    [1, 0, 0, 0, 0], 
                     [2, 0, 0, 0, 0],
                     [3, 0, 0, 0, 0], 
                     [4, 0, 0, 0, 0], 
