@@ -2,7 +2,6 @@ import os
 from PIL import Image
 from torch.utils.data import Dataset, Subset
 import random
-import numpy as np
 
 
 class CustomDataset(Dataset):
@@ -28,20 +27,23 @@ class CustomDataset(Dataset):
         label = img_name.split('_')[0]
         return label
     
-    def split_dataset(self, train_size=0.8, shuffle=True):
-        train_len = int(train_size * len(self))
+    def split_dataset(self, trainSize=0.8, shuffle=True):
+        trainLen = int(trainSize * len(self))
+        testAndValLen = (len(self) - trainLen) / 2
 
         indices = list(range(len(self)))
         if shuffle:
             random.shuffle(indices)
 
-        train_indices = indices[:train_len]
-        test_indices = indices[train_len:]
+        trainIndices = indices[:trainLen]
+        testIndices = indices[trainLen:int(trainLen + testAndValLen)]
+        valIndices = indices[int(trainLen + testAndValLen):]
 
-        train_subset = Subset(self, train_indices)
-        test_subset = Subset(self, test_indices)
+        trainSubset = Subset(self, trainIndices)
+        testSubset = Subset(self, testIndices)
+        valSubset = Subset(self, valIndices)
 
-        return train_subset, test_subset
+        return trainSubset, valSubset, testSubset
 
 
 

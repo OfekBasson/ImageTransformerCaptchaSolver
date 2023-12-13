@@ -10,31 +10,49 @@ import os
 import pandas as pd
 import csv
 
-NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION = 25
+NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION = 250
 
-class DataFetcher:
+class WebsiteConnectionHandler:
     
     def __init__(self):
         self.csvFileName = 'digits_images_counter.csv'
         self.options = webdriver.ChromeOptions()
         self.options.add_argument("--start-maximized")
-        self.numbersAndLocationExistanceArray = np.zeros((10, 4))
         self.digitsImagesCounterDataFrame = self.getUpdatedDigitsImagesCounterDataFrame()
         self.tabsAndNumbersDictionary = {}
 
     def createDatabase(self):
-        while(not self.finishedFetchingData()):
+        while(not self.finishedFetchingAllData()):
             self.fillDataAndSubmit()
             number, imageURL = self.getURLAndStringOfNumberDisplayed()
-            self.createNewTab(imageURL)
-            self.saveImagesOfSpecificNumber(imageURL, number)
-            self.driver.close()
+            if (not self.finishedFetchingAllDigits(number)):
+                self.createNewTab(imageURL)
+                self.saveImagesOfSpecificNumber(imageURL, number)
+                self.driver.close()
+    
+    def SaveImageForCaptchaHack(self):
+        self.fillDataAndSubmit()
+        numbersImage = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_RadCaptcha1_CaptchaImageUP"]')
+        imageURL = numbersImage.get_attribute("src")
+        self.saveImagesOfSpecificNumber(imageURL, singleImage=True)
     
     def createNewTab(self, imageURL):
         self.driver.switch_to.new_window('tab')
         self.driver.get(imageURL)
+
+    def finishedFetchingAllDigits(self, number):
+        firstDigit = int(number[0])
+        secondDigit = int(number[1])
+        thirdDigit = int(number[2])
+        fourthDigit = int(number[3])
+        if(self.digitsImagesCounterDataFrame.at[firstDigit, 'NumberOfInstancesFirstDigit'] >= NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION
+           or self.digitsImagesCounterDataFrame.at[secondDigit, 'NumberOfInstancesSecondDigit'] >= NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION
+           or self.digitsImagesCounterDataFrame.at[thirdDigit, 'NumberOfInstancesThirdDigit'] >= NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION
+           or self.digitsImagesCounterDataFrame.at[fourthDigit, 'NumberOfInstancesFourthDigit'] >= NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
+            return True
+        return False
         
-    def finishedFetchingData(self):
+    def finishedFetchingAllData(self):
         dataFrameHeaderValues = ['NumberOfInstancesFirstDigit', 'NumberOfInstancesSecondDigit', 'NumberOfInstancesThirdDigit', 'NumberOfInstancesFourthDigit']
         for i in range(9):
             for columnName in dataFrameHeaderValues:
@@ -69,18 +87,19 @@ class DataFetcher:
         submitButton = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_btnHipus"]')
         return cityInput, propertyType, transactionType, submitButton
 
-    def saveImagesOfSpecificNumber(self, imageURL, number):
+    def saveImagesOfSpecificNumber(self, imageURL, number=0, singleImage=False):
         for i in range(25):
             self.driver.get(imageURL)
             myScreenshot = pyautogui.screenshot(region=(806, 614, 180, 48))
-            imagePath = f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{number}.png'
+            directory = "single_image" if singleImage else "Data"
+            imagePath = f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/{directory}/{number}.png'
             myScreenshot.save(imagePath)
-            self.splitImageToFourDigits(imagePath, number)
+            self.splitImageToFourDigits(imagePath, number, singleImage)
             os.remove(imagePath)
             time.sleep(2)
         self.digitsImagesCounterDataFrame.to_csv(self.csvFileName)
 
-    def splitImageToFourDigits(self, imagePath, number):
+    def splitImageToFourDigits(self, imagePath, number, singleImage):
         with Image.open(imagePath) as image:
             firstDigitRight = image.width / 4
             secondDigitRight = image.width / 2
