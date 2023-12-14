@@ -32,9 +32,8 @@ class WebsiteConnectionHandler:
     
     def SaveImageForCaptchaHack(self):
         self.fillDataAndSubmit()
-        numbersImage = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_RadCaptcha1_CaptchaImageUP"]')
-        imageURL = numbersImage.get_attribute("src")
-        self.saveImagesOfSpecificNumber(imageURL, singleImage=True)
+        self.saveImagesOfSpecificNumber(singleImage=True)
+        
     
     def createNewTab(self, imageURL):
         self.driver.switch_to.new_window('tab')
@@ -52,6 +51,14 @@ class WebsiteConnectionHandler:
             return True
         return False
         
+    def enterNumberToCaptcha(self, number):
+        captchaInput = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_RadCaptcha1_CaptchaTextBox"]')
+        captchaInput.send_keys(number)
+        time.sleep(15)
+        submitButton = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_btnIshur"]')
+        submitButton.click()
+        
+    
     def finishedFetchingAllData(self):
         dataFrameHeaderValues = ['NumberOfInstancesFirstDigit', 'NumberOfInstancesSecondDigit', 'NumberOfInstancesThirdDigit', 'NumberOfInstancesFourthDigit']
         for i in range(9):
@@ -87,48 +94,41 @@ class WebsiteConnectionHandler:
         submitButton = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_btnHipus"]')
         return cityInput, propertyType, transactionType, submitButton
 
-    def saveImagesOfSpecificNumber(self, imageURL, number=0, singleImage=False):
-        for i in range(25):
-            self.driver.get(imageURL)
-            myScreenshot = pyautogui.screenshot(region=(806, 614, 180, 48))
+    def saveImagesOfSpecificNumber(self, imageURL="", number='1234', singleImage=False):
+        numberOfImagesToSave = 1 if singleImage else 25
+        imageRegion = (806, 614, 180, 48) if not singleImage else (904, 582, 180, 48)
+        for i in range(numberOfImagesToSave):
+            myScreenshot = pyautogui.screenshot(region=imageRegion)
             directory = "single_image" if singleImage else "Data"
             imagePath = f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/{directory}/{number}.png'
             myScreenshot.save(imagePath)
             self.splitImageToFourDigits(imagePath, number, singleImage)
             os.remove(imagePath)
             time.sleep(2)
+            if not singleImage:
+                self.driver.get(imageURL)
         self.digitsImagesCounterDataFrame.to_csv(self.csvFileName)
 
     def splitImageToFourDigits(self, imagePath, number, singleImage):
         with Image.open(imagePath) as image:
-            firstDigitRight = image.width / 4
-            secondDigitRight = image.width / 2
-            thirdDigitRight = image.width * 3 / 4
+            firstDigitRight, secondDigitRight, thirdDigitRight = image.width / 4, image.width / 2, image.width * 3 / 4
+            firstDigit, secondDigit, thirdDigit, fourthDigit = int(number[0]), int(number[1]), int(number[2]), int(number[3])
+            digitsAndLabelsData = [{'digit': firstDigit, 'label': 'NumberOfInstancesFirstDigit', 'sideBorders': {'leftBorder': 0, 'rightBorder': firstDigitRight}}, 
+                      {'digit': secondDigit, 'label': 'NumberOfInstancesSecondDigit', 'sideBorders': {'leftBorder': firstDigitRight, 'rightBorder': secondDigitRight}}, 
+                      {'digit': thirdDigit, 'label': 'NumberOfInstancesThirdDigit', 'sideBorders': {'leftBorder': secondDigitRight, 'rightBorder': thirdDigitRight}}, 
+                      {'digit': fourthDigit, 'label': 'NumberOfInstancesFourthDigit', 'sideBorders': {'leftBorder': thirdDigitRight, 'rightBorder': image.width}}
+                      ]
+            for i in range(4):
+                digitData = digitsAndLabelsData[i]
+                self.saveDigitImage(image, digitData['digit'], digitData['label'],digitData['sideBorders'], singleImage)
 
-            firstDigit = int(number[0])
-            secondDigit = int(number[1])
-            thirdDigit = int(number[2])
-            fourthDigit = int(number[3])
 
-            if(self.digitsImagesCounterDataFrame.at[firstDigit, 'NumberOfInstancesFirstDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
-                firstCroppedImage = image.crop((0, 0, firstDigitRight, image.height))
-                firstCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{firstDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDataFrame.at[firstDigit, 'NumberOfInstancesFirstDigit'] += 1
-
-            if(self.digitsImagesCounterDataFrame.at[secondDigit, 'NumberOfInstancesSecondDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
-                secondCroppedImage = image.crop((firstDigitRight, 0, secondDigitRight, image.height))
-                secondCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{secondDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDataFrame.at[secondDigit, 'NumberOfInstancesSecondDigit'] += 1
-
-            if(self.digitsImagesCounterDataFrame.at[thirdDigit, 'NumberOfInstancesThirdDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
-                thirdCroppedImage = image.crop((secondDigitRight, 0, thirdDigitRight, image.height))
-                thirdCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{thirdDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDataFrame.at[thirdDigit, 'NumberOfInstancesThirdDigit'] += 1
-
-            if(self.digitsImagesCounterDataFrame.at[fourthDigit, 'NumberOfInstancesFourthDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
-                fourthCroppedImage = image.crop((thirdDigitRight, 0, image.width, image.height))
-                fourthCroppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/Data/{fourthDigit}_{uuid.uuid4()}.png')
-                self.digitsImagesCounterDataFrame.at[fourthDigit, 'NumberOfInstancesFourthDigit'] += 1
+    def saveDigitImage(self, image, digit, label, sideBorders, singleImage):
+        if(self.digitsImagesCounterDataFrame.at[digit, label] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION or singleImage):
+                croppedImage = image.crop((sideBorders['leftBorder'], 0, sideBorders['rightBorder'], image.height))
+                destinationDirectory = 'Data' if not singleImage else 'single_image'
+                croppedImage.save(f'/Users/wpqbswn/Desktop/Ofek/8200-learning/NadlanCaptchaNumbersClassification/{destinationDirectory}/{digit}_{uuid.uuid4()}.png')
+                self.digitsImagesCounterDataFrame.at[digit, label] += 1
                 
     def getUpdatedDigitsImagesCounterDataFrame(self):
         try:
