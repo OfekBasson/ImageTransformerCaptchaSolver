@@ -2,7 +2,6 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.by import By
 import time
-import numpy as np
 import pyautogui
 from PIL import Image
 import uuid 
@@ -19,43 +18,64 @@ class WebsiteConnectionHandler:
         self.options = webdriver.ChromeOptions()
         self.options.add_argument("--start-maximized")
         self.digitsImagesCounterDataFrame = self.getUpdatedDigitsImagesCounterDataFrame()
-        self.tabsAndNumbersDictionary = {}
 
     def createDatabase(self):
         while(not self.finishedFetchingAllData()):
             self.fillDataAndSubmit()
             number, imageURL = self.getURLAndStringOfNumberDisplayed()
-            if (not self.finishedFetchingAllDigits(number)):
-                self.createNewTab(imageURL)
-                self.saveImagesOfSpecificNumber(imageURL, number)
-                self.driver.close()
+            time.sleep(3)
+            if (self.numberContainDigitInLocationThatHasntFinishedFetching(number)):
+                if (not self.finishedFetchingAllDigits(number)):
+                    self.createNewTab(imageURL)
+                    self.saveImagesOfNumber(imageURL, number)
+                    self.driver.close()
     
     def SaveImageForCaptchaHack(self):
         self.fillDataAndSubmit()
-        self.saveImagesOfSpecificNumber(singleImage=True)
+        self.saveImagesOfNumber(singleImage=True)
         
-    
+    def numberContainDigitInLocationThatHasntFinishedFetching(self, number):
+        firstDigit, secondDigit, thirdDigit, fourthDigit = self.getIntegerDigitsFromNumber(number)
+        if(self.digitsImagesCounterDataFrame.at[firstDigit, 'NumberOfInstancesFirstDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION
+           or self.digitsImagesCounterDataFrame.at[secondDigit, 'NumberOfInstancesSecondDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION
+           or self.digitsImagesCounterDataFrame.at[thirdDigit, 'NumberOfInstancesThirdDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION
+           or self.digitsImagesCounterDataFrame.at[fourthDigit, 'NumberOfInstancesFourthDigit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
+            print(f"All digits has already finished fetching.\nno first digit: {self.digitsImagesCounterDataFrame.at[firstDigit, 'NumberOfInstancesFirstDigit']}\nno second digit: {self.digitsImagesCounterDataFrame.at[secondDigit, 'NumberOfInstancesSecondDigit']}\nno third digit: {self.digitsImagesCounterDataFrame.at[thirdDigit, 'NumberOfInstancesThirdDigit']}\nno fourth digit: {self.digitsImagesCounterDataFrame.at[fourthDigit, 'NumberOfInstancesFourthDigit']}")
+            return True
+        return False
+
+    def getIntegerDigitsFromNumber(self, number):
+        firstDigit = int(number[0])
+        secondDigit = int(number[1])
+        thirdDigit = int(number[2])
+        fourthDigit = int(number[3])
+        return firstDigit, secondDigit, thirdDigit, fourthDigit
+
     def createNewTab(self, imageURL):
         self.driver.switch_to.new_window('tab')
         self.driver.get(imageURL)
 
     def finishedFetchingAllDigits(self, number):
-        firstDigit = int(number[0])
-        secondDigit = int(number[1])
-        thirdDigit = int(number[2])
-        fourthDigit = int(number[3])
-        if(self.digitsImagesCounterDataFrame.at[firstDigit, 'NumberOfInstancesFirstDigit'] >= NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION
-           or self.digitsImagesCounterDataFrame.at[secondDigit, 'NumberOfInstancesSecondDigit'] >= NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION
-           or self.digitsImagesCounterDataFrame.at[thirdDigit, 'NumberOfInstancesThirdDigit'] >= NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION
-           or self.digitsImagesCounterDataFrame.at[fourthDigit, 'NumberOfInstancesFourthDigit'] >= NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
+        firstDigit, secondDigit, thirdDigit, fourthDigit = self.getIntegerDigitsFromNumber(number)
+        if(self.isDigitTotallyFinishedFetching(firstDigit)
+           and self.isDigitTotallyFinishedFetching(secondDigit)
+           and self.isDigitTotallyFinishedFetching(thirdDigit)
+           and self.isDigitTotallyFinishedFetching(fourthDigit)):
             return True
         return False
-        
+    
+    def isDigitTotallyFinishedFetching(self, digit):
+        for location in ['First', 'Second', 'Third', 'Fourth']:
+            print(f'NumberOfInstances{location}Digit')
+            if(self.digitsImagesCounterDataFrame.at[digit, f'NumberOfInstances{location}Digit'] < NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION):
+                return False
+        return True
+                   
     def enterNumberToCaptcha(self, number):
         captchaInput = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_RadCaptcha1_CaptchaTextBox"]')
         captchaInput.send_keys(number)
-        time.sleep(15)
         submitButton = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_btnIshur"]')
+        time.sleep(3)
         submitButton.click()
         
     
@@ -81,11 +101,11 @@ class WebsiteConnectionHandler:
         cityInput.send_keys("חיפה")
         propertyTypeSelect = Select(propertyType)
         propertyTypeSelect.select_by_index(1)
-        time.sleep(5)
+        time.sleep(3)
         transactionTypeSelect = Select(transactionType)
         transactionTypeSelect.select_by_index(2)
         submitButton.click()
-        time.sleep(5)
+        time.sleep(3)
 
     def getElementsFromNadlanWebsite(self):
         cityInput = self.driver.find_element(By.XPATH, '//*[@id="txtYeshuv"]')
@@ -94,8 +114,8 @@ class WebsiteConnectionHandler:
         submitButton = self.driver.find_element(By.XPATH, '//*[@id="ContentUsersPage_btnHipus"]')
         return cityInput, propertyType, transactionType, submitButton
 
-    def saveImagesOfSpecificNumber(self, imageURL="", number='1234', singleImage=False):
-        numberOfImagesToSave = 1 if singleImage else 25
+    def saveImagesOfNumber(self, imageURL="", number='1234', singleImage=False):
+        numberOfImagesToSave = 1 if singleImage else NUMBER_OF_WANTED_INSTANCES_OF_EACH_NUMBER_ON_EACH_LOCATION
         imageRegion = (806, 614, 180, 48) if not singleImage else (904, 582, 180, 48)
         for i in range(numberOfImagesToSave):
             myScreenshot = pyautogui.screenshot(region=imageRegion)
@@ -104,7 +124,7 @@ class WebsiteConnectionHandler:
             myScreenshot.save(imagePath)
             self.splitImageToFourDigits(imagePath, number, singleImage)
             os.remove(imagePath)
-            time.sleep(2)
+            time.sleep(1)
             if not singleImage:
                 self.driver.get(imageURL)
         self.digitsImagesCounterDataFrame.to_csv(self.csvFileName)
@@ -157,8 +177,6 @@ class WebsiteConnectionHandler:
             return digitsImagesCounterdataFrame
             
 
-
-        
 
         
 

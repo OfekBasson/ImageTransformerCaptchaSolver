@@ -32,7 +32,6 @@ class VisionTransformer(nn.Module):
         }}
 
     def forward(self, images):
-        ##Should do the indexing of the index during fetching and remove this line
         images = images[:,:3,:,:]
         images = self.unfold(images).transpose(1, 2)
         images = self.linear(images)

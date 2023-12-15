@@ -8,7 +8,7 @@ class CustomDataset(Dataset):
     def __init__(self, root_dir, transform=None):
         self.root_dir = root_dir
         self.transform = transform
-        self.images = os.listdir(root_dir)
+        self.images = [file for file in os.listdir(root_dir) if not file.startswith('.')] 
 
     def __len__(self):
         return len(self.images)
