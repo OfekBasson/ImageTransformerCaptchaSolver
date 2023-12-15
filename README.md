@@ -8,6 +8,4 @@ This project presents a code for solving captcha from the Israeli real-estate ta
 Final accuracy is 98.7%.
 <img src="/images/training_results.png" alt="Example of 4 separated digits" width="400"/>
 3. Online captcha "hacking" demonstration.
-
-## Demonstration GIF:
 ![](/images/demonstration_gif.gif)
