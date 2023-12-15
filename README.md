@@ -10,19 +10,4 @@ Final accuracy is 98.7%.
 <img src="/images/training_results.png" alt="Example of 4 separated digits" width="400"/>
 3. Online captcha "hacking" demonstration.
 
-## Installation guide
-For installation - follow those steps:
-1. Run the following commands in your terminal:
-```bash
-git clone https://github.com/OfekBasson/ImageTransformerCaptchaSolver.git
-
-cd ImageTransformerCaptchaSolver
-
-pip install -r requirements.txt
-```
-2. Enter /src/captcha_solver.ipynb
-3. Run all 
-
-
-
 
