@@ -1,5 +1,4 @@
-# Image Transformer Captcha Solver
-## Overview
+# Vision Transformer Captcha Solver
 This project presents a code for solving captcha from the Israeli real-estate tax website.
 **The project is divided into 3 parts and most of it is presented inside the jupyter notebook attached to this repo (inside "/src" folder):**
 1. Fetching 2,500 captchas from the website, crop each captcha to 4 parts (4 digits) and save digit images (10,000 total) inside "/Data" folder.
