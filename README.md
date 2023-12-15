@@ -4,10 +4,10 @@ This project presents a code for solving captcha from the Israeli real-estate ta
 **The project is divided into 3 parts and most of it is presented inside the jupyter notebook attached to this repo (inside "/src" folder):**
 1. Fetching 2,500 captchas from the website, crop each captcha to 4 parts (4 digits) and save digit images (10,000 total) inside "/Data" folder.
 *This part and the fetched data is not presented in the jupyter notebook*.
-![Example of 4 seperated digits](/images/digits.png)
+<img src="/images/digits.png" alt="image" class="custom-image">
 2. Training and evaluating vision transformer (As explained in the article "AN IMAGE IS WORTH 16X16 WORDS").
 Final accuracy is 98.7%.
-![Training Results (20 epochs)](/images/training_results.png)
+<img src="/images/training_results.png" alt="image" class="custom-image">
 3. Online captcha "hacking" demonstration.
 
 ## Installation guide
@@ -22,6 +22,13 @@ pip install -r requirements.txt
 ```
 2. Enter /src/captcha_solver.ipynb
 3. Run all 
+
+<style>
+.custom-image {
+  width: 150;
+  height: auto;
+}
+</style>
 
 
 
