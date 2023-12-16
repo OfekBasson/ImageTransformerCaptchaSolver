@@ -5,7 +5,7 @@ This project presents a code for solving captcha from the Israeli real-estate ta
 *This part and the fetched data is not presented in the jupyter notebook but the code for fetching the data is inside the websiteConnectionHandler class*.
 <img src="/images/digits.png" alt="Example of 4 separated digits" width="400"/>
 2. Training and evaluating vision transformer (As explained in the article "AN IMAGE IS WORTH 16X16 WORDS").
-Final accuracy is 98.7%.
+Final accuracy is 98.7% for a single digit classification.
 <img src="/images/training_results.png" alt="Example of 4 separated digits" width="400"/>
 3. Online captcha "hacking" demonstration.
 
